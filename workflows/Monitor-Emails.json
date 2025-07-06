@@ -1,0 +1,398 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        48
+      ],
+      "id": "01f2151f-fb91-4005-bff8-cb4aed149f7b",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "690pzDVZ3WLF6hp7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Mark a message as read').item.json.id }}",
+        "message": "<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" bgcolor=\"#f8f8f8\">   <tr>     <td align=\"center\" style=\"padding: 30px 15px;\">       <table width=\"600\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" bgcolor=\"#ffffff\" style=\"border-radius:8px; padding: 30px;\">         <tr>           <td style=\"font-size:1.05em; color:#333; line-height:1.5;\">             <p style=\"margin-bottom:18px; font-size:1.05em;\">               <b>Thank you for replying.</b><br><br>               Please download our Total Body Mobile Massage Amenity Service Proposal PDF attached to this email. After reading through the information, please click on the link at the end of the document, and it will take you to where you can view our full virtual proposal. We truly appreciate your interest, and look forward to working together with your community soon.             </p>             <p style=\"color:#444; font-size:0.98em; white-space:pre-line; margin-top:24px;\">               Lyndon S.               <br>Total Body Mobile Massage – Outreach Team               <br>Contact Email: tbmmoutreach@gmail.com               <br>Company Website: www.totalbodymobilemassage.com             </p>           </td>         </tr>       </table>     </td>   </tr> </table>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          },
+          "senderName": "Lyndon S.",
+          "replyToSenderOnly": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        -64
+      ],
+      "id": "edf5ec62-657f-4a55-8b77-46824cfe97af",
+      "name": "Reply to a message",
+      "webhookId": "9ee729e5-3839-41d9-a435-4f6b056326ca",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "690pzDVZ3WLF6hp7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        672,
+        -64
+      ],
+      "id": "f858aaa3-4154-4c5e-9f20-8e9b1b2fe9e4",
+      "name": "Mark a message as read",
+      "webhookId": "dcfaa817-d965-4ced-9a64-08076746d8af",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "690pzDVZ3WLF6hp7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4cae3339-8dd6-4018-8cc7-cc6ef5622d58",
+              "leftValue": "={{ Object.keys($json).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        48
+      ],
+      "id": "18fe524b-9dfa-4a53-b808-cbd846434aac",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        672,
+        160
+      ],
+      "id": "7a360c5a-c105-4ed9-878b-43a506de86cc",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "content": "# 🕵🏻 Email Auto-Reply Workflow\n\n## Flow\n1. **Gmail Trigger** → Poll unread emails every hour\n2. **Keyword Filter** → Extract reply text & match keywords\n3. **If Match Found** → Mark as read → Send reply → Update DB\n4. **No Match** → Do nothing\n\n## Keywords\nRetention, massage, luxury, lifestyle, bond, survey, etc.\n\n## Logic\n- Only processes top reply (strips quoted content)\n- Auto-reply: \"Thanks for Replying!\"\n- Updates `email_logs.replied = TRUE`",
+        "height": 544,
+        "width": 2272,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        -176
+      ],
+      "id": "04018138-3ee5-4575-9dde-aa513c22620a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "email_logs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.threadId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "replied",
+              "fieldValue": "TRUE"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        -64
+      ],
+      "id": "e4d0e957-615d-484e-b189-8353658bd75a",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Keywords for matching (supports single-word and multi-word phrases)\nconst keywords = $json.keywords;\n\n// Utility to escape regex metacharacters\nfunction escapeRegex(str) {\n  return str.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n}\n\n// Extract only the new reply content (stop at quoted content)\nfunction extractTopReply(text) {\n  if (!text) return '';\n  \n  const lines = text.split(/\\r?\\n/);\n  const replyLines = [];\n  \n  for (const line of lines) {\n    const trimmed = line.trim();\n    \n    // Gmail patterns\n    if (trimmed.startsWith('>') ||                           // > quoted line\n        /^On\\s+.*wrote:?\\s*$/i.test(trimmed) ||             // \"On ... wrote:\"\n        /^On\\s+.*<.*@.*>.*wrote:?\\s*$/i.test(trimmed)) {    // \"On ... <email> wrote:\"\n      break;\n    }\n    \n    // Outlook patterns\n    if (/^-+Original Message-+/i.test(trimmed) ||           // -----Original Message-----\n        /^From:\\s+.*@/i.test(trimmed) ||                    // From: email@domain\n        /^Sent:\\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i.test(trimmed) ||  // Sent: Day, Date\n        /^To:\\s+.*@/i.test(trimmed) ||                      // To: email@domain\n        /^Subject:\\s+/i.test(trimmed)) {                    // Subject: ...\n      break;\n    }\n    \n    // Apple Mail patterns\n    if (/^Begin forwarded message:/i.test(trimmed) ||       // Begin forwarded message:\n        /^Date:\\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i.test(trimmed)) {  // Date: Day, Date\n      break;\n    }\n    \n    replyLines.push(line);\n  }\n  \n  return replyLines.join('\\n').trim();\n}\n\n\n// ------------------ Precompute keyword structures ------------------\n\n// Single-word keywords set\nconst singleWordKeywords = new Set(\n  keywords\n    .filter(k => !/\\s/.test(k))\n    .map(k => k.toLowerCase())\n);\n\n// Multi-word phrase keywords (lowercased)\nconst phraseKeywords = keywords\n  .filter(k => /\\s/.test(k))\n  .map(k => k.toLowerCase());\n\n// Precompile phrase regexes and organize by first word\nconst phraseMap = {}; // firstWord -> [ { phrase, re } ]\n\nfor (const phrase of phraseKeywords) {\n  const parts = phrase.split(/\\s+/).map(escapeRegex);\n  // strict: require whitespace between words in order\n  const pattern = '\\\\b' + parts.join('\\\\s+') + '\\\\b';\n  // If you want to allow punctuation/hyphens between phrase words (e.g., \"lease-longer\" or \"lease, longer\"), \n  // replace the above line with:\n  // const pattern = '\\\\b' + parts.join('[\\\\W_]+') + '\\\\b';\n\n  const re = new RegExp(pattern, 'i'); // case-insensitive for safety\n  const firstWord = phrase.split(/\\s+/)[0];\n\n  if (!phraseMap[firstWord]) phraseMap[firstWord] = [];\n  phraseMap[firstWord].push({ phrase, re });\n}\n\n\n// Find matched keywords (optimized)\nfunction findMatchedKeywords(text) {\n  const lower = text.toLowerCase();\n\n  // Tokenize into words: alphanumeric sequences\n  const words = lower.match(/\\b[a-z0-9]+\\b/g) || [];\n  const seen = new Set();\n  const matched = [];\n\n  // For avoiding repeated phrase regex tests when first word repeats\n  const triedPhrases = new Set();\n\n  // Single-word matching and candidate phrase matching by first word\n  for (const word of words) {\n    // single-word\n    if (singleWordKeywords.has(word) && !seen.has(word)) {\n      matched.push(word);\n      seen.add(word);\n    }\n\n    // phrase candidates whose first word is this word\n    if (phraseMap[word]) {\n      for (const { phrase, re } of phraseMap[word]) {\n        if (triedPhrases.has(phrase)) continue; // already tested\n        triedPhrases.add(phrase);\n        if (!seen.has(phrase) && re.test(lower)) {\n          matched.push(phrase);\n          seen.add(phrase);\n        }\n      }\n    }\n  }\n\n  return matched;\n}\n\n// ------------------ Main processing ------------------\n\nconst rawText = ($('Gmail Trigger').item.json.text || '').toString();\nconst topReply = extractTopReply(rawText);\n\n// Skip if no meaningful reply content\nif (!topReply || topReply.length < 3) {\n  return {};\n}\n\nconst matchedKeywords = findMatchedKeywords(topReply);\n\n// Only proceed if keywords found\nif (matchedKeywords.length === 0) {\n  return {};\n}\n\n// Return processed result\nreturn {\n  ...$json,\n  replyText: topReply,\n  matchedKeywords,\n  primaryMatched: matchedKeywords[0]\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        48
+      ],
+      "id": "34f3f094-b858-4a59-955a-50f3a4e7060e",
+      "name": "Check for Keywords"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "campaign_progress",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -64
+      ],
+      "id": "3338f56d-c17d-4e63-accf-9eb9dca02a48",
+      "name": "Get PDF Url",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pdf_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        -64
+      ],
+      "id": "4e90386a-6261-43b7-9c32-6fb9b22fdf2b",
+      "name": "GET PDF"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "email_templates",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        48
+      ],
+      "id": "37406444-456b-4c31-9e5c-7bd81b268295",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "keyword",
+              "renameField": true,
+              "outputFieldName": "keywords"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        112,
+        48
+      ],
+      "id": "175c5d9e-b8dd-4d30-8bcd-d67e48839534",
+      "name": "Combine keywords into a list"
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark a message as read": {
+      "main": [
+        [
+          {
+            "node": "Get PDF Url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Keywords": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get PDF Url": {
+      "main": [
+        [
+          {
+            "node": "GET PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET PDF": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Combine keywords into a list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine keywords into a list": {
+      "main": [
+        [
+          {
+            "node": "Check for Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0cf1013c00750bfab7ca7f6a76bf0e8c2407d7a4a9a4e66c4888ec456837f043"
+  }
+}

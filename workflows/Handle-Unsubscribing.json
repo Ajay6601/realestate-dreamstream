@@ -1,0 +1,438 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "unsubscribe",
+        "responseMode": "responseNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-992, 16],
+      "id": "4e0d0908-ae28-44ee-a0ac-927158d1d2ca",
+      "name": "Webhook",
+      "webhookId": "9b8864d8-a65d-418e-9a6e-b2fbeeba11d5"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1136, 272],
+      "id": "3e3e5c77-b2e4-4868-aad4-a61b676b3113",
+      "name": "Respond to Webhook",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "properties",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opt_out_code",
+              "keyValue": "={{ $json.uuid }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-176, -80],
+      "id": "1f2dad19-9a15-435f-a3c6-b3ef462b63e7",
+      "name": "Get a row",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d7a22eb9-680c-498a-8ce9-e1f6ebe5aa63",
+              "leftValue": "={{ Object.keys($json).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [16, -80],
+      "id": "75e1e1a8-50d8-4bf3-bf38-13e5e641dcdd",
+      "name": "If Row Exists",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5a6af251-f0d7-436c-92cb-2958005586c6",
+              "leftValue": "={{ $json.suspend_until }}",
+              "rightValue": "={{ new Date().toISOString().split('T')[0] }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "beforeOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [304, -224],
+      "id": "7e1f4d80-63d8-42d0-a752-c92e2ed5be64",
+      "name": "If Not Already Unsub"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\">\n  <title>Unsubscription Confirmation</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"success-icon\">\n      <svg width=\"80\" height=\"80\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n        <circle cx=\"12\" cy=\"12\" r=\"10\" stroke=\"#4CAF50\" stroke-width=\"2\" fill=\"none\"/>\n        <path d=\"m9 12 2 2 4-4\" stroke=\"#4CAF50\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n      </svg>\n    </div>\n    \n    <h1>Successfully Unsubscribed</h1>\n    \n    <div class=\"unsubscribe-details\">\n      <h2>You have unsubscribed from:</h2>\n      \n      <div class=\"service-card\">\n        <div class=\"service-header\">\n          <h3>Lyndon S.</h3>\n          <span class=\"company-badge\">Total Body Mobile Massage – Outreach Team</span>\n        </div>\n        \n        <div class=\"contact-info\">\n          <div class=\"contact-item\">\n            <span class=\"contact-label\">Contact Email:</span>\n            <a href=\"mailto:tbmmoutreach@gmail.com\" class=\"contact-link\">tbmmoutreach@gmail.com</a>\n          </div>\n          \n          <div class=\"contact-item\">\n            <span class=\"contact-label\">Company Website:</span>\n            <a href=\"https://www.totalbodymobilemassage.com\" target=\"_blank\" class=\"contact-link\">www.totalbodymobilemassage.com</a>\n          </div>\n        </div>\n      </div>\n    </div>\n    \n    <div class=\"confirmation-message\">\n      <p>You will no longer receive communications from this service.</p>\n    </div>\n  </div>\n\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    body {\n      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1976d2 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n\n    .container {\n      background: rgba(255, 255, 255, 0.95);\n      backdrop-filter: blur(10px);\n      text-align: center;\n      padding: 40px;\n      border-radius: 20px;\n      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);\n      max-width: 600px;\n      width: 100%;\n      animation: slideUp 0.6s ease-out;\n    }\n\n    @keyframes slideUp {\n      from {\n        opacity: 0;\n        transform: translateY(30px);\n      }\n      to {\n        opacity: 1;\n        transform: translateY(0);\n      }\n    }\n\n    .success-icon {\n      margin-bottom: 24px;\n      animation: checkmark 0.8s ease-in-out 0.2s both;\n    }\n\n    @keyframes checkmark {\n      0% {\n        opacity: 0;\n        transform: scale(0.5) rotate(-45deg);\n      }\n      50% {\n        opacity: 1;\n        transform: scale(1.1) rotate(0deg);\n      }\n      100% {\n        opacity: 1;\n        transform: scale(1) rotate(0deg);\n      }\n    }\n\n    h1 {\n      color: #000000;\n      font-size: 32px;\n      font-weight: 700;\n      margin-bottom: 30px;\n      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n    }\n\n    h2 {\n      color: #000000;\n      font-size: 20px;\n      font-weight: 600;\n      margin-bottom: 25px;\n    }\n\n    .service-card {\n      background: linear-gradient(135deg, #e3f2fd, #bbdefb);\n      border-radius: 15px;\n      padding: 25px;\n      margin: 20px 0;\n      border: 1px solid rgba(33, 150, 243, 0.1);\n      transition: transform 0.3s ease, box-shadow 0.3s ease;\n    }\n\n    .service-card:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 10px 25px rgba(33, 150, 243, 0.15);\n    }\n\n    .service-header {\n      margin-bottom: 20px;\n    }\n\n    h3 {\n      color: #0d47a1;\n      font-size: 24px;\n      font-weight: 700;\n      margin-bottom: 10px;\n    }\n\n    .company-badge {\n      background: linear-gradient(135deg, #1976d2, #1565c0);\n      color: white;\n      padding: 8px 16px;\n      border-radius: 25px;\n      font-size: 14px;\n      font-weight: 600;\n      display: inline-block;\n      box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);\n    }\n\n    .contact-info {\n      text-align: left;\n    }\n\n    .contact-item {\n      margin-bottom: 15px;\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      flex-wrap: wrap;\n      gap: 10px;\n    }\n\n    .contact-label {\n      color: #424242;\n      font-weight: 600;\n      font-size: 14px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n\n    .contact-link {\n      color: #1976d2;\n      text-decoration: none;\n      font-weight: 600;\n      transition: color 0.3s ease;\n      word-break: break-all;\n    }\n\n    .contact-link:hover {\n      color: #0d47a1;\n      text-decoration: underline;\n    }\n\n    .confirmation-message {\n      background: rgba(33, 150, 243, 0.1);\n      border: 1px solid rgba(33, 150, 243, 0.3);\n      border-radius: 10px;\n      padding: 20px;\n      margin: 25px 0;\n      color: #0d47a1;\n      font-size: 16px;\n      line-height: 1.5;\n    }\n\n    @media (max-width: 768px) {\n      body {\n        padding: 10px;\n      }\n      \n      .container {\n        padding: 30px 20px;\n        margin: 0;\n        min-height: calc(100vh - 20px);\n        border-radius: 15px;\n        max-width: 100%;\n      }\n      \n      h1 {\n        font-size: 28px;\n        margin-bottom: 25px;\n      }\n      \n      h2 {\n        font-size: 18px;\n      }\n      \n      h3 {\n        font-size: 22px;\n      }\n      \n      .company-badge {\n        font-size: 13px;\n        padding: 6px 14px;\n      }\n      \n      .contact-item {\n        flex-direction: column;\n        align-items: flex-start;\n        margin-bottom: 20px;\n      }\n      \n      .contact-label {\n        margin-bottom: 5px;\n      }\n      \n      .contact-link {\n        font-size: 14px;\n        word-break: break-word;\n      }\n      \n      .confirmation-message {\n        padding: 15px;\n        font-size: 15px;\n      }\n      \n      .success-icon svg {\n        width: 60px;\n        height: 60px;\n      }\n    }\n  </style>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [752, -240],
+      "id": "e3ac2cd3-98e1-4550-bf8a-cf27bb3347fb",
+      "name": "Unsubscribed Template"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\">\n  <title>Already Unsubscribed</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"alert-icon\">\n      <svg width=\"80\" height=\"80\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n        <circle cx=\"12\" cy=\"12\" r=\"10\" stroke=\"#FFA000\" stroke-width=\"2\" fill=\"none\"/>\n        <path d=\"M12 8v4\" stroke=\"#FFA000\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <path d=\"M12 16h.01\" stroke=\"#FFA000\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n      </svg>\n    </div>\n    \n    <h1>Already Unsubscribed</h1>\n    \n    <div class=\"unsubscribe-details\">\n      <h2>You have already unsubscribed from:</h2>\n      \n      <div class=\"service-card\">\n        <div class=\"service-header\">\n          <h3>Lyndon S.</h3>\n          <span class=\"company-badge\">Total Body Mobile Massage – Outreach Team</span>\n        </div>\n        \n        <div class=\"contact-info\">\n          <div class=\"contact-item\">\n            <span class=\"contact-label\">Contact Email:</span>\n            <a href=\"mailto:tbmmoutreach@gmail.com\" class=\"contact-link\">tbmmoutreach@gmail.com</a>\n          </div>\n          \n          <div class=\"contact-item\">\n            <span class=\"contact-label\">Company Website:</span>\n            <a href=\"https://www.totalbodymobilemassage.com\" target=\"_blank\" class=\"contact-link\">www.totalbodymobilemassage.com</a>\n          </div>\n        </div>\n      </div>\n    </div>\n    \n    <div class=\"info-message\">\n      <p>You are already unsubscribed from this service. Contact the sender if you still receive emails.</p>\n    </div>\n  </div>\n\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    body {\n      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #D32F2F 0%, #F57C00 50%, #FFA000 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n\n    .container {\n      background: rgba(255, 255, 255, 0.95);\n      backdrop-filter: blur(10px);\n      text-align: center;\n      padding: 40px;\n      border-radius: 20px;\n      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);\n      max-width: 600px;\n      width: 100%;\n      animation: slideUp 0.6s ease-out;\n    }\n\n    @keyframes slideUp {\n      from {\n        opacity: 0;\n        transform: translateY(30px);\n      }\n      to {\n        opacity: 1;\n        transform: translateY(0);\n      }\n    }\n\n    .alert-icon {\n      margin-bottom: 24px;\n      animation: alertPulse 0.8s ease-in-out 0.2s both;\n    }\n\n    @keyframes alertPulse {\n      0% {\n        opacity: 0;\n        transform: scale(0.5);\n      }\n      50% {\n        opacity: 1;\n        transform: scale(1.1);\n      }\n      100% {\n        opacity: 1;\n        transform: scale(1);\n      }\n    }\n\n    h1 {\n      color: #000000;\n      font-size: 32px;\n      font-weight: 700;\n      margin-bottom: 30px;\n      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);\n    }\n\n    h2 {\n      color: #000000;\n      font-size: 20px;\n      font-weight: 600;\n      margin-bottom: 25px;\n    }\n\n    .service-card {\n      background: linear-gradient(135deg, #FFECB3, #FFD54F);\n      border-radius: 15px;\n      padding: 25px;\n      margin: 20px 0;\n      border: 1px solid rgba(244, 81, 30, 0.1);\n      transition: transform 0.3s ease, box-shadow 0.3s ease;\n    }\n\n    .service-card:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 10px 25px rgba(244, 81, 30, 0.15);\n    }\n\n    .service-header {\n      margin-bottom: 20px;\n    }\n\n    h3 {\n      color: #B71C1C;\n      font-size: 24px;\n      font-weight: 700;\n      margin-bottom: 10px;\n    }\n\n    .company-badge {\n      background: linear-gradient(135deg, #F57C00, #FFA000);\n      color: white;\n      padding: 8px 16px;\n      border-radius: 25px;\n      font-size: 14px;\n      font-weight: 600;\n      display: inline-block;\n      box-shadow: 0 4px 15px rgba(244, 81, 30, 0.3);\n    }\n\n    .contact-info {\n      text-align: left;\n    }\n\n    .contact-item {\n      margin-bottom: 15px;\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      flex-wrap: wrap;\n      gap: 10px;\n    }\n\n    .contact-label {\n      color: #424242;\n      font-weight: 600;\n      font-size: 14px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n    }\n\n    .contact-link {\n      color: #D32F2F;\n      text-decoration: none;\n      font-weight: 600;\n      transition: color 0.3s ease;\n      word-break: break-all;\n    }\n\n    .contact-link:hover {\n      color: #B71C1C;\n      text-decoration: underline;\n    }\n\n    .info-message {\n      background: rgba(255, 193, 7, 0.1);\n      border: 1px solid rgba(255, 193, 7, 0.3);\n      border-radius: 10px;\n      padding: 20px;\n      margin: 25px 0;\n      color: #E65100;\n      font-size: 16px;\n      line-height: 1.5;\n    }\n\n    @media (max-width: 768px) {\n      body {\n        padding: 10px;\n      }\n      \n      .container {\n        padding: 30px 20px;\n        margin: 0;\n        min-height: calc(100vh - 20px);\n        border-radius: 15px;\n        max-width: 100%;\n      }\n      \n      h1 {\n        font-size: 28px;\n        margin-bottom: 25px;\n      }\n      \n      h2 {\n        font-size: 18px;\n      }\n      \n      h3 {\n        font-size: 22px;\n      }\n      \n      .company-badge {\n        font-size: 13px;\n        padding: 6px 14px;\n      }\n      \n      .contact-item {\n        flex-direction: column;\n        align-items: flex-start;\n        margin-bottom: 20px;\n      }\n      \n      .contact-label {\n        margin-bottom: 5px;\n      }\n      \n      .contact-link {\n        font-size: 14px;\n        word-break: break-word;\n      }\n      \n      .info-message {\n        padding: 15px;\n        font-size: 15px;\n      }\n      \n      .alert-icon svg {\n        width: 60px;\n        height: 60px;\n      }\n    }\n  </style>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [752, -32],
+      "id": "f1e56e3e-6b3c-41ac-94c6-4ad327c8722a",
+      "name": "Already Unsubscribed Template"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3164db51-750c-463d-9e4c-ce7759818bbf",
+              "leftValue": "={{ $json.query.optOutCode }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-800, 16],
+      "id": "7a6e9934-e103-40b9-b1ec-d07b39fb290e",
+      "name": "If Correct Query Param"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access input data (assuming input is in item.json.uuid)\nconst uuid = $input.first().json.query.optOutCode;\n\n// UUID validation function\nfunction isValidUUID(uuid) {\n  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n  return uuidRegex.test(uuid);\n}\n\n// Return the result as an output item\nreturn [\n  {\n    json: {\n      uuid,\n      isValid: isValidUUID(uuid)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-592, -64],
+      "id": "c1957905-de87-4e11-9b29-2669d9d159ef",
+      "name": "Valid UUID",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "# ❌ Unsubscribe Workflow\n\n## Flow\n1. **Webhook** → Check `optOutCode` param exists\n2. **UUID Validation** → Validate format\n3. **DB Lookup** → Find property in Supabase\n4. **Status Check** → Compare `suspend_until` with today\n5. **Update/Response** → Extend suspension by 90 days OR show already unsubscribed\n\n## Templates\n- ✅ **Success**: Green themed unsubscribe confirmation\n- ⚠️ **Already Unsubscribed**: Orange themed warning\n- ❌ **Invalid**: Red themed error page\n\n## Error Handling\n- Missing/invalid UUID → Error template\n- Row not found → Error template\n- Already unsubscribed → Warning template",
+        "height": 800,
+        "width": 2768,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1408, -320],
+      "id": "0ac69f6e-4450-4abe-9eae-d2591d3afd28",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\">\n  <title>Invalid Unsubscribe Link</title>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"error-icon\">\n      <svg width=\"60\" height=\"60\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n        <circle cx=\"12\" cy=\"12\" r=\"10\" stroke=\"#f44336\" stroke-width=\"2\" fill=\"none\"/>\n        <path d=\"M15 9l-6 6\" stroke=\"#f44336\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <path d=\"M9 9l6 6\" stroke=\"#f44336\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n      </svg>\n    </div>\n    \n    <h1>Invalid Unsubscribe Link</h1>\n    \n    <div class=\"error-details\">\n      <h2>The unsubscribe link you used is not valid</h2>\n      \n      <div class=\"error-card\">\n        <p class=\"card-title\">This could be due to:</p>\n        <ul>\n          <li>The link has been modified or corrupted</li>\n          <li>The unsubscribe code is incorrect or expired</li>\n          <li>Missing or invalid parameters in the URL</li>\n        </ul>\n      </div>\n    </div>\n    \n    <div class=\"help-section\">\n      <h3>Need to unsubscribe?</h3>\n      <p class=\"card-title\">Contact the sender directly:</p>\n      <div class=\"contact-details\">\n        <div class=\"contact-item\">\n          <span class=\"contact-label\">Service:</span>\n          <span class=\"contact-value\">Lyndon S - Total Body Mobile Massage</span>\n        </div>\n        <div class=\"contact-item\">\n          <span class=\"contact-label\">Email:</span>\n          <a href=\"mailto:tbmmoutreach@gmail.com\" class=\"contact-link\">tbmmoutreach@gmail.com</a>\n        </div>\n        <div class=\"contact-item\">\n          <span class=\"contact-label\">Website:</span>\n          <a href=\"https://www.totalbodymobilemassage.com\" target=\"_blank\" class=\"contact-link\">www.totalbodymobilemassage.com</a>\n        </div>\n      </div>\n    </div>\n    \n    <div class=\"warning-message\">\n      <span class=\"warning-icon\">⚠</span>\n      <p><strong>Security Notice:</strong> For your protection, please ensure you only click on unsubscribe links from trusted sources and avoid modifying URL parameters.</p>\n    </div>\n  </div>\n\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n      background: linear-gradient(135deg, #ef5350 0%, #e91e63 50%, #9c27b0 100%);\n      background-size: 400% 400%;\n      animation: gradientShift 8s ease infinite;\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 16px;\n    }\n\n    @keyframes gradientShift {\n      0% { background-position: 0% 50%; }\n      50% { background-position: 100% 50%; }\n      100% { background-position: 0% 50%; }\n    }\n\n    .container {\n      background: rgba(255, 255, 255, 0.95);\n      backdrop-filter: blur(15px);\n      text-align: center;\n      padding: 24px;\n      border-radius: 20px;\n      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);\n      max-width: 600px;\n      width: 100%;\n      animation: slideUp 0.6s ease-out;\n      border: 1px solid rgba(255, 255, 255, 0.3);\n    }\n\n    @keyframes slideUp {\n      from {\n        opacity: 0;\n        transform: translateY(30px);\n      }\n      to {\n        opacity: 1;\n        transform: translateY(0);\n      }\n    }\n\n    .error-icon {\n      margin-bottom: 16px;\n    }\n\n    .error-icon svg {\n      width: 60px;\n      height: 60px;\n    }\n\n    h1 {\n      color: #c62828;\n      font-size: 24px;\n      font-weight: 700;\n      margin-bottom: 12px;\n      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);\n    }\n\n    h2 {\n      color: #424242;\n      font-size: 16px;\n      font-weight: 600;\n      margin-bottom: 20px;\n      line-height: 1.4;\n    }\n\n    h3 {\n      color: #2c3e50;\n      font-size: 18px;\n      font-weight: 700;\n      margin-bottom: 12px;\n      text-align: left;\n    }\n\n    .error-card, .help-section, .warning-message {\n      border-radius: 12px;\n      padding: 14px;\n      margin: 12px 0;\n      text-align: left;\n      transition: transform 0.2s ease;\n    }\n\n    .error-card {\n      background: linear-gradient(135deg, #ffebee, #fce4ec);\n      border: 1px solid rgba(244, 67, 54, 0.2);\n      border-left: 4px solid #f44336;\n    }\n\n    .help-section {\n      background: linear-gradient(135deg, #e8f5e8, #f1f8e9);\n      border: 1px solid rgba(76, 175, 80, 0.2);\n      border-left: 4px solid #4caf50;\n    }\n\n    .card-title {\n      color: #424242;\n      font-weight: 600;\n      margin-bottom: 8px;\n      font-size: 14px;\n    }\n\n    .help-section .card-title {\n      color: #2e7d32;\n    }\n\n    ul {\n      list-style: none;\n      padding: 0;\n    }\n\n    li {\n      color: #666;\n      margin-bottom: 4px;\n      padding-left: 16px;\n      position: relative;\n      line-height: 1.3;\n      font-size: 13px;\n    }\n\n    li:before {\n      content: \"•\";\n      color: #f44336;\n      font-weight: bold;\n      position: absolute;\n      left: 0;\n    }\n\n    .contact-details {\n      margin-top: 12px;\n    }\n\n    .contact-item {\n      margin-bottom: 8px;\n      display: flex;\n      align-items: flex-start;\n      gap: 8px;\n      flex-wrap: wrap;\n    }\n\n    .contact-label {\n      color: #388e3c;\n      font-weight: 700;\n      font-size: 12px;\n      text-transform: uppercase;\n      letter-spacing: 0.5px;\n      min-width: 55px;\n      flex-shrink: 0;\n    }\n\n    .contact-value {\n      color: #2e7d32;\n      font-weight: 500;\n      font-size: 13px;\n      flex: 1;\n      word-break: break-word;\n    }\n\n    .contact-link {\n      color: #1976d2;\n      text-decoration: none;\n      font-weight: 500;\n      font-size: 13px;\n      transition: color 0.3s ease;\n      word-break: break-all;\n      flex: 1;\n    }\n\n    .contact-link:hover {\n      color: #0d47a1;\n      text-decoration: underline;\n    }\n\n    .warning-message {\n      background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));\n      border: 1px solid rgba(255, 193, 7, 0.4);\n      border-left: 4px solid #ff9800;\n      color: #f57c00;\n      font-size: 12px;\n      line-height: 1.4;\n      display: flex;\n      align-items: flex-start;\n      gap: 8px;\n    }\n\n    .warning-icon {\n      font-size: 14px;\n      color: #ff9800;\n      flex-shrink: 0;\n      margin-top: 1px;\n    }\n\n    .warning-message p {\n      margin: 0;\n    }\n\n    .warning-message strong {\n      color: #e65100;\n    }\n\n    /* Mobile optimizations */\n    @media (max-width: 480px) {\n      body {\n        padding: 12px;\n      }\n      \n      .container {\n        padding: 20px 16px;\n        border-radius: 16px;\n      }\n      \n      .error-icon svg {\n        width: 50px;\n        height: 50px;\n      }\n      \n      h1 {\n        font-size: 20px;\n        margin-bottom: 10px;\n      }\n      \n      h2 {\n        font-size: 14px;\n        margin-bottom: 16px;\n      }\n      \n      h3 {\n        font-size: 16px;\n        margin-bottom: 10px;\n      }\n      \n      .error-card, .help-section, .warning-message {\n        padding: 14px;\n        margin: 12px 0;\n        border-radius: 10px;\n      }\n      \n      .card-title {\n        font-size: 13px;\n        margin-bottom: 10px;\n      }\n      \n      li {\n        font-size: 12px;\n        margin-bottom: 4px;\n        padding-left: 14px;\n      }\n      \n      .contact-item {\n        flex-direction: column;\n        gap: 2px;\n        margin-bottom: 10px;\n      }\n      \n      .contact-label {\n        font-size: 11px;\n        min-width: auto;\n        margin-bottom: 2px;\n      }\n      \n      .contact-value, .contact-link {\n        font-size: 12px;\n      }\n      \n      .warning-message {\n        font-size: 11px;\n      }\n      \n      .warning-icon {\n        font-size: 12px;\n      }\n    }\n\n    /* Extra small screens */\n    @media (max-width: 360px) {\n      .container {\n        padding: 16px 12px;\n      }\n      \n      h1 {\n        font-size: 18px;\n      }\n      \n      h2 {\n        font-size: 13px;\n      }\n      \n      h3 {\n        font-size: 15px;\n      }\n      \n      .error-card, .help-section, .warning-message {\n        padding: 12px;\n      }\n      \n      .card-title {\n        font-size: 12px;\n      }\n      \n      li {\n        font-size: 11px;\n      }\n      \n      .contact-value, .contact-link {\n        font-size: 11px;\n      }\n    }\n  </style>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [352, 272],
+      "id": "20a5ecd0-487c-4cb0-b229-d2ffe5cd1520",
+      "name": "Incorrect Template"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c4532a72-2586-4bae-9935-ae0298c1af7c",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-400, -64],
+      "id": "4d09b016-fca5-4249-898c-f6b11ea4866f",
+      "name": "If Valid UUID"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "properties",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "opt_out_code",
+              "condition": "eq",
+              "keyValue": "={{ $json.opt_out_code }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "suspend_until",
+              "fieldValue": "={{ new Date(new Date().setDate(new Date().getDate() + 90)).toISOString().split('T')[0] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [544, -240],
+      "id": "0bb3bb4d-f9f5-439d-b1af-3587a637bb6d",
+      "name": "Unsubscribe",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Correct Query Param",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "If Row Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Row Exists": {
+      "main": [
+        [
+          {
+            "node": "If Not Already Unsub",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incorrect Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Already Unsub": {
+      "main": [
+        [
+          {
+            "node": "Unsubscribe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Already Unsubscribed Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unsubscribed Template": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Unsubscribed Template": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Correct Query Param": {
+      "main": [
+        [
+          {
+            "node": "Valid UUID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incorrect Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid UUID": {
+      "main": [
+        [
+          {
+            "node": "If Valid UUID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incorrect Template": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Valid UUID": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incorrect Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unsubscribe": {
+      "main": [
+        [
+          {
+            "node": "Unsubscribed Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0cf1013c00750bfab7ca7f6a76bf0e8c2407d7a4a9a4e66c4888ec456837f043"
+  }
+}
