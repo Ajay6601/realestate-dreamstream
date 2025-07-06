@@ -1,0 +1,376 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        656,
+        128
+      ],
+      "id": "fdcfda3b-4709-40f0-b7a2-26e6410797ba",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.decision_maker_email }}",
+        "subject": "={{ $('Get Email Template').first().json.subject }}",
+        "message": "={{ $('Format the Template').first().json.emailHtml }}<br><br>\n<a href=\"https://n8n.elyptra.com/webhook/unsubscribe?optOutCode={{ $json.opt_out_code }}\">Click Here to Unsubscribe</a>",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Lyndon S.",
+          "replyToSenderOnly": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1616,
+        32
+      ],
+      "id": "6875112e-0034-4254-a430-82ea99a56d81",
+      "name": "Send a message",
+      "webhookId": "13ec49f4-c7b3-4eed-9927-242c16e6eb3e",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "690pzDVZ3WLF6hp7",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "email_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "property_id",
+              "fieldValue": "={{ $('Loop Over Items').item.json.id }}"
+            },
+            {
+              "fieldId": "template_id",
+              "fieldValue": "={{ $('Get Email Template').first().json.id }}"
+            },
+            {
+              "fieldId": "campaign_day",
+              "fieldValue": "={{ $('Get Email Template').first().json.current_day }}"
+            },
+            {
+              "fieldId": "email_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "thread_id",
+              "fieldValue": "={{ $json.threadId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        32
+      ],
+      "id": "2fce5651-11e9-4bd9-8f8f-f170dc8be998",
+      "name": "Log",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://wiwxjzggfwkiqekkjtev.supabase.co/rest/v1/rpc/get_current_email_template",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        16
+      ],
+      "id": "efe0cb04-d716-4631-bc2c-42f72995ec3e",
+      "name": "Get Email Template",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1392,
+        16
+      ],
+      "id": "7cb79ddd-3766-48e4-bad4-4451434565f2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "content": "# ✉ Email Campaign Automation\n\n## Features\n- Sends emails from pre-created templates to property managers via Gmail\n- Batch processing (10 emails at a time)\n- Campaign week tracking & auto-increment\n- Activity logging with email/thread IDs\n- Respects suspension dates\n\n## Function Flow\n1. Get current email template from Supabase\n2. Format HTML email content\n3. Fetch active properties (suspend_until ≤ today)\n4. Loop through properties in batches\n5. Send Gmail → Log activity → Update campaign progress\n\n## Setup Requirements\n**Credentials:**\n- Gmail OAuth2 (for sending)\n- Supabase API (for database)\n\n**Database Tables:**\n- `email_templates` - campaign content\n- `properties` - owner contact info\n- `email_logs` - delivery tracking\n- `campaign_progress` - week counter\n\n## Key Settings\n- **Batch Size**: 10 properties per loop\n- **Sender Name**: \"Lyndon S.\"\n- **Reply-to**: Sender only\n- **Error Handling**: Continue on failure\n- **Retry**: Enabled on all nodes\n",
+        "height": 880,
+        "width": 2032,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -304
+      ],
+      "id": "b387eb06-a61f-4725-b921-04cf1ca577bd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1968,
+        32
+      ],
+      "id": "93c2b431-f473-46f3-bd4e-3bf93bd267c9",
+      "name": "Wait",
+      "webhookId": "5471eced-5594-44e8-bd47-4928faf86465"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "da622108-2766-44bb-b35f-b5fadd154c1d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "properties",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "decision_maker_email",
+              "condition": "=not.is",
+              "keyValue": "null"
+            },
+            {
+              "keyName": "decision_maker_email",
+              "condition": "neq"
+            },
+            {
+              "keyName": "decision_maker_email",
+              "condition": "like",
+              "keyValue": "%@%"
+            },
+            {
+              "keyName": "suspend_until",
+              "condition": "lte",
+              "keyValue": "={{ new Date().toISOString().split('T')[0] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        16
+      ],
+      "id": "f7183e15-ff21-430d-b3b3-b13d3ac86f77",
+      "name": "Get Emails",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://wiwxjzggfwkiqekkjtev.supabase.co/rest/v1/rpc/increment_campaign_day",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1616,
+        -192
+      ],
+      "id": "3986e8f5-cd19-4867-a2e6-3aceefa54f7b",
+      "name": "Update Email Template",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "3s08KGAB5ucFx4S5",
+          "name": "Supabase account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from the previous node\nconst items = $input.all();\nif (!items || items.length === 0) {\n  throw new Error('No input data received');\n}\n\n// Access the first item's json property\nconst inputData = items[0].json;\n\n// Destructure fields from inputData, providing defaults\nconst { hook = '', body = '', signature = '' } = inputData;\n\n// Format the signature, converting \\n and \\\\n to <br>\nconst formattedSignature = (signature || '')\n  .replace(/\\\\n/g, '<br>')\n  .replace(/\\n/g, '<br>');\n\n// Build the HTML email body\nlet emailHtml = '';\n\nif (hook) {\n  emailHtml += `<p style=\"font-weight:bold; font-size:1.1em; margin-bottom:12px;\">${hook}</p>`;\n}\n\nemailHtml += `<p style=\"margin-bottom:18px; font-size:1.05em;\">${body}</p>`;\n\nemailHtml += `<p style=\"color:#444; font-size:0.98em; white-space:pre-line; margin-top:24px;\">${formattedSignature}</p>`;\n\nreturn [{\n  json: {\n    emailHtml,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        16
+      ],
+      "id": "41162cc7-8c1e-46fb-8097-bb208726eb49",
+      "name": "Format the Template",
+      "retryOnFail": true
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Email Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email Template": {
+      "main": [
+        [
+          {
+            "node": "Format the Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Update Email Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Email Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format the Template": {
+      "main": [
+        [
+          {
+            "node": "Get Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0cf1013c00750bfab7ca7f6a76bf0e8c2407d7a4a9a4e66c4888ec456837f043"
+  }
+}
