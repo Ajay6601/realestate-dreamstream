@@ -5,7 +5,7 @@ Recorded by Ajay.
 The product is two programs on one Postgres database:
 
 - The Next.js console runs campaigns: upload buildings, keep a decision-maker, send a template, log the reply, store a proposal PDF.
-- The FastAPI service keeps priced listings and leads for a tenant.
+- The FastAPI service runs valuations: a tenant, priced listings, leads, a model, and drafts that quote the model.
 
 They must not share a `properties` table. The columns are not the same.
 
@@ -30,6 +30,16 @@ Signup creates one tenant and one admin. A second user in that tenant is an agen
 Lead budgets are a constraint, not a comment: `budget_min <= budget_max` or the insert fails. The recommender treats type, city, and "way over budget" as hard filters. Price inside a 10% stretch past `budget_max` is a soft penalty, not a drop.
 
 Cross-tenant reads return 404, including when the id is real and belongs to someone else. 403 would confirm the row exists.
+
+---
+
+## 19 Sep 2025: estimates and what we will say in a draft
+
+The model returns a point and an 80% residual interval. A listing is undervalued, fair, or overpriced by comparing list price to that estimate. Opportunities are the undervalued active listings, sorted by discount.
+
+Drafts are templates first. An optional LLM pass may rephrase them. If the dollar figures or the opt-out footer change, the polish is thrown away and the template is what gets stored. `mark-sent` flips status. It does not call an email provider. Delivery stays outside this service until there is a place to honor STOP replies.
+
+The number in the draft has to be the number the model produced. We will not let a rewrite "round" a price.
 
 ---
 
