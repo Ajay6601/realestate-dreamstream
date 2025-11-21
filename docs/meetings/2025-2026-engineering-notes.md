@@ -43,3 +43,21 @@ The number in the draft has to be the number the model produced. We will not let
 
 ---
 
+## 21 Nov 2025: row-level security on Supabase
+
+Reviewed against a database where the API role is not a superuser.
+
+Fail closed. If neither `request.jwt.claims` nor `app.tenant_id` is set, `app.current_tenant_id()` is null and every policy is false. A missing GUC must not mean "see all tenants".
+
+`FORCE ROW LEVEL SECURITY` is on for valuation tables. `WITH CHECK` repeats the tenant predicate on insert and update, so a row cannot be moved to another tenant by changing `tenant_id`.
+
+Deletes are admin-only. `tenants` and `users` are select-only for the API role. Signup and login use `ADMIN_DATABASE_URL` (on Supabase, the service role connection), because those writes happen before a tenant claim exists.
+
+The session setting is transaction-local. A commit was dropping it, and the next statement in the same request saw an empty tenant. It is set again on `after_begin`.
+
+The web console is a different login. Server routes use the service role and bypass RLS. The browser uses the user JWT (`lib/cache.ts`). Campaign tables therefore have authenticated policies, or the dashboard selects come back empty. Those tables have no per-user owner column, so the policy is "any signed-in operator", not "this tenant". Invites are the exception: `invited_by = auth.uid()`.
+
+Anon has no grants.
+
+---
+
