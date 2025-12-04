@@ -61,3 +61,13 @@ Anon has no grants.
 
 ---
 
+## 4 Dec 2025: audit
+
+The trigger is `SECURITY DEFINER` and is the only writer of `valuation.audit_log`. The API role can select, and only an admin of that tenant.
+
+Skip the row when nothing changed, and when the only change is `updated_at`. Otherwise the log fills up with touches from the timestamp trigger.
+
+Update, delete, and truncate on `audit_log` raise even for the owner. If that trigger is weakened, `tests/db/test_rls_and_audit.py` is supposed to go red. That test is the check, not a comment in the SQL file.
+
+---
+
