@@ -71,3 +71,24 @@ Update, delete, and truncate on `audit_log` raise even for the owner. If that tr
 
 ---
 
+## 15 Jan 2026: when a model is allowed to ship
+
+Training on 8,000 synthetic rows is the CI path (`ml.pipeline run --rows 8000`). Promotion is not "the job finished". These gates have to pass, scored from the saved artifact, not from a JSON file the trainer wrote:
+
+| Check | Bar |
+|---|---|
+| R² | ≥ 0.85 |
+| MAPE | ≤ 0.15 |
+| Within 10% of actual | ≥ 0.55 |
+| MAE vs city $/sqft baseline | at least 20% better |
+| Predictions | finite and positive |
+| Sqft probe | not decreasing by more than 2% |
+| 80% interval | holdout coverage within 8 points of 0.80 |
+| Champion | MAE not more than 5% worse than the current model |
+
+A failed gate exits 1 and does not move the `latest` pointer. Rollback points `latest` at the previous version. The weekly workflow (Mondays 06:00 UTC) uses the same command. A bad Monday run leaves production on the old model.
+
+The synthetic fit is a pipeline test. It is not an opinion about a real city. A CSV with the feature columns plus `sale_price` is the path for a real book, and it refuses to train if the file is too small or the columns are wrong.
+
+---
+
