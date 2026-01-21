@@ -1,0 +1,38 @@
+# Local stack: Postgres with RLS + audit triggers, and the API connecting as the low-privilege role.
+#   docker compose up --build      (first start trains a model; ~30s)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: realestate
+    ports: ["55432:5432"]  # non-default host port: avoids clashing with a local Postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # applied once, in filename order, on first start
+      - ./sql/000_roles.sql:/docker-entrypoint-initdb.d/000_roles.sql:ro
+      - ./sql/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./sql/002_rls.sql:/docker-entrypoint-initdb.d/002_rls.sql:ro
+      - ./sql/003_audit.sql:/docker-entrypoint-initdb.d/003_audit.sql:ro
+      - ./sql/004_grants.sql:/docker-entrypoint-initdb.d/004_grants.sql:ro
+      - ./sql/005_dev_login.sh:/docker-entrypoint-initdb.d/005_dev_login.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d realestate"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ENVIRONMENT: dev
+      # API role is subject to RLS; the admin URL (owner) is used only for signup/login.
+      DATABASE_URL: postgresql+psycopg://app_user:app_user_pw@db:5432/realestate
+      ADMIN_DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/realestate
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
