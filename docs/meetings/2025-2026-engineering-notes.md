@@ -92,3 +92,15 @@ The synthetic fit is a pipeline test. It is not an opinion about a real city. A 
 
 ---
 
+## 10 Mar 2026: volume
+
+`process-properties` is capped at 1,500 requests per UTC day (`DAILY_REQUEST_LIMIT`). The same cap is a trigger on `public.request_tracker`, so a second client cannot ignore the TypeScript constant.
+
+`email_logs` is the table that grows with every send. The dashboard's reply rate is a count of `replied`, not a scan of message bodies. Indexes: `(sent_at desc)`, `(property_id, sent_at desc)`, `(campaign_day, sent_at desc)`, and a partial index of rows that were replied to. Thread id is unique.
+
+Recommendations and similar-homes score the tenant's listings in the request. That is acceptable for a few thousand active rows. It is not acceptable for a national dump. Past that, precompute. Do not "just raise the timeout".
+
+Liked-property similarity is a boost on top of the hard filters, not a way around them. An inactive listing does not get recommended.
+
+---
+
