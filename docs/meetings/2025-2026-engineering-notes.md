@@ -104,3 +104,24 @@ Liked-property similarity is a boost on top of the hard filters, not a way aroun
 
 ---
 
+## 11 May 2026: v1.0.0
+
+Release bar for 1.0.0:
+
+- ruff clean, and `next lint` clean
+- pytest on 3.10 and 3.12 (SQLite). Database tests skip there on purpose
+- the same suite on Postgres 16 as `app_user`, including the RLS and audit tests
+- model gate promoted a version and the image build consumed that artifact
+- `ghcr.io/ajay6601/realestate-dreamstream:v1.0.0` published
+- `supabase db push` applied the audit migration; the earlier three were already on the project
+- `/health` returned 200 after the new container came up
+- `ENVIRONMENT=prod` still refuses the default JWT secret
+
+Known limits, left as limits:
+
+- `mark-sent` does not deliver email
+- the shipped model is synthetic until someone trains on a real CSV
+- campaign RLS is operator-wide, because the console rows have no tenant id
+- proposal files go to the public `proposals` bucket, PDF only, 25 MB
+
+Not in this release: a mail provider, a per-user split of the campaign book, or precomputed recommendations.
