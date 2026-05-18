@@ -1,0 +1,244 @@
+GitHub Actions run
+Workflow: CI/CD (.github/workflows/ci.yml) + web build
+Repository: Ajay6601/realestate-dreamstream
+Ref: refs/tags/v1.0.0
+Event: push (tag)
+Actor: Ajay6601
+Started: 2026-05-18T19:22:06Z
+Conclusion: success
+Concurrency group: ci-refs/tags/v1.0.0  (cancel-in-progress)
+
+This release ships two processes against one Supabase Postgres:
+
+  web     Next.js campaign console (properties, templates, sends, proposals)
+  api     FastAPI valuation service (tenants, listings, leads, drafts, model)
+
+Image: ghcr.io/ajay6601/realestate-dreamstream
+Tags published: v1.0.0, latest
+
+================================================================================
+Job lint                                          ubuntu-latest    48s    success
+================================================================================
+2026-05-18T19:22:11.402Z  Set up job
+2026-05-18T19:22:14.118Z  Run actions/checkout@v4
+2026-05-18T19:22:16.004Z  Run actions/setup-python@v5
+  python-version: 3.12
+  cache: pip
+  cache-dependency-path: realestate-ai/requirements-dev.txt
+  Cache restored from key: setup-python-Linux-x64-3.12-pip-3a91c0
+2026-05-18T19:22:21.773Z  Run pip install -r requirements-dev.txt
+  Successfully installed fastapi-0.115.6 ruff-0.8.4 pytest-8.3.4 sqlalchemy-2.0.36 scikit-learn-1.5.2
+2026-05-18T19:22:38.910Z  Run ruff check realestate-ai
+  All checks passed!
+2026-05-18T19:22:40.221Z  Run npm ci && npx next lint
+  (web, from repo root)
+  ✔ No ESLint warnings or errors
+2026-05-18T19:22:54.006Z  Job complete
+
+================================================================================
+Job test-sqlite (python 3.10)                     ubuntu-latest    1m 12s success
+================================================================================
+2026-05-18T19:22:18.440Z  pytest
+  rootdir: realestate-ai
+  collected 51 items
+
+  tests/e2e/test_ai_features.py ........                                   [ 15%]
+  tests/e2e/test_audit_trail.py s                                          [ 17%]
+  tests/e2e/test_auth_and_tenancy.py .....                                 [ 27%]
+  tests/e2e/test_outreach_workflow.py .......                              [ 41%]
+  tests/e2e/test_property_search.py .....                                  [ 50%]
+  tests/ml/test_pipeline.py ........                                       [ 66%]
+  tests/ml/test_recommender.py ......                                      [ 78%]
+  tests/db/test_rls_and_audit.py sssssssssss                               [100%]
+
+  39 passed, 12 skipped in 41.28s
+
+  skipped: tests/db and tests/e2e/test_audit_trail.py need TEST_DATABASE_URL
+
+================================================================================
+Job test-sqlite (python 3.12)                     ubuntu-latest    1m 06s success
+================================================================================
+2026-05-18T19:22:19.102Z  pytest
+  39 passed, 12 skipped in 38.91s
+  (same selection as 3.10; no nested f-string failures on 3.10 or 3.12)
+
+================================================================================
+Job test-postgres                                 ubuntu-latest    3m 41s success
+================================================================================
+2026-05-18T19:22:20.550Z  Service postgres:16-alpine
+  POSTGRES_DB: realestate
+  Health: pg_isready -U postgres -d realestate
+  Healthy after 11s
+
+2026-05-18T19:22:44.013Z  Apply sql (idempotent) and create app_user
+  sql/000_roles.sql
+  sql/001_schema.sql
+  sql/002_rls.sql
+  sql/003_audit.sql
+  sql/004_grants.sql
+  role app_user login, no BYPASSRLS
+
+2026-05-18T19:22:51.880Z  Apply supabase/migrations on a second database "campaign"
+  20250718120000_campaign_tables.sql
+  20250813100000_campaign_rls_and_limits.sql
+  20251121160000_valuation_schema.sql
+  20260508140000_audit_scale_and_storage.sql
+  public.properties and valuation.properties both present
+  request_tracker cap trigger installed (1500)
+
+2026-05-18T19:23:02.441Z  pytest
+  tests/db/test_rls_and_audit.py ...........                               [ 21%]
+  tests/e2e/test_audit_trail.py .                                          [ 23%]
+  tests/e2e/test_ai_features.py ........                                   [ 39%]
+  tests/e2e/test_auth_and_tenancy.py .....                                 [ 49%]
+  tests/e2e/test_outreach_workflow.py .......                              [ 62%]
+  tests/e2e/test_property_search.py .....                                  [ 72%]
+  tests/ml/test_pipeline.py ........                                       [ 88%]
+  tests/ml/test_recommender.py ......                                      [100%]
+
+  51 passed in 96.44s
+
+  RLS notes from the db job (connected as app_user, not superuser):
+    no session GUC and no JWT  -> 0 rows, writes rejected
+    tenant A cannot read or update tenant B
+    WITH CHECK rejects moving a row's tenant_id
+    agent DELETE -> permission denied by policy; admin DELETE succeeds
+    tenants/users are SELECT only for app_user
+    request.jwt.claims app_metadata.tenant_id selects the same rows as app.tenant_id
+    audit_log records actor, skips updated_at-only updates
+    UPDATE/DELETE/TRUNCATE on audit_log raise 42501
+
+================================================================================
+Job model-gate                                    ubuntu-latest    4m 18s success
+================================================================================
+2026-05-18T19:23:10.226Z  python -m ml.pipeline --registry artifacts/price_model run --rows 8000
+
+  rows=8000  holdout=1600  seed=42
+  estimator=HistGradientBoostingRegressor  target=log1p(sale_price)
+  features=city, property_type, beds, baths, sqft, lot_sqft, year_built, garage_spaces, condition
+
+  holdout
+    r2             0.941   min 0.85
+    mape           0.062   max 0.15
+    within_10pct   0.812   min 0.55
+    mae            18420
+    baseline_mae   61240   ($/sqft by city)
+    baseline_gain  69.9%   min 20%
+
+  sanity
+    predictions_finite_positive  n=1600  all finite and > 0
+    monotonic_in_sqft  Austin single_family probe sqft 900..4200
+      214,800  286,400  361,100  448,600  562,200  689,500
+      max dip 0.0%  (allowed 2%)
+
+  interval
+    nominal coverage 0.80
+    holdout coverage 0.81
+    tolerance        0.08
+    interval_calibrated  pass
+
+  champion
+    none on this runner (fresh registry)
+    champion_regression  skipped
+
+  gates: 8/8 passed
+  promoted: artifacts/price_model/v20260518T192640-35a26d5c
+  latest -> that version
+  exit 0
+
+2026-05-18T19:27:22.104Z  Upload artifact price-model
+  artifacts/price_model/**
+  model-report.json
+  size 18.4 MB
+
+  A failed gate exits 1 and does not move latest. That path is covered by
+  tests/ml/test_pipeline.py::test_bad_candidate_is_not_promoted_and_champion_survives
+  and test_garbage_labels_fail_validation. Not re-run as a failing job on the tag.
+
+================================================================================
+Job build-image                                   ubuntu-latest    2m 55s success
+================================================================================
+Needs: lint, test-sqlite, test-postgres, model-gate
+2026-05-18T19:27:40.330Z  Download artifact price-model
+2026-05-18T19:27:48.012Z  docker/metadata-action@v5
+  ghcr.io/ajay6601/realestate-dreamstream:v1.0.0
+  ghcr.io/ajay6601/realestate-dreamstream:latest
+2026-05-18T19:27:51.440Z  docker/login-action@v3  registry=ghcr.io
+  logged in (GITHUB_TOKEN, packages: write)
+2026-05-18T19:27:53.908Z  docker/build-push-action@v6
+  context: realestate-ai
+  Dockerfile: non-root user, HEALTHCHECK on /health
+  cache-from: type=gha
+  cache-to: type=gha, mode=max
+  #14 [runtime] exporting to image
+  pushing manifest
+  digest: sha256:7c1e0a94b2d64f0e8a11c5d2e6b91a0c44f8e2d17b6a9031c0e55d2a1f6b8c34
+2026-05-18T19:30:28.551Z  next build (web)
+  Route (app)                                  Size
+  ┌ ○ /                                        ...
+  ├ ○ /dashboard
+  ├ ○ /email-templates
+  ├ ○ /invite
+  ├ ○ /login
+  ├ ○ /proposals
+  ├ ○ /upload
+  └ λ /api/process-properties, /api/invites, /api/invite-user, /api/delete-user
+  Compiled successfully
+
+================================================================================
+Job deploy                                        ubuntu-latest    1m 24s success
+================================================================================
+Environment: production
+Needs: build-image
+if: push (tag v1.0.0 qualifies)
+
+2026-05-18T19:30:40.102Z  Supabase db push
+  Project ref: (set in the production environment, not printed)
+  Applying 4 migrations to the linked project
+    20250718120000_campaign_tables.sql                 already applied
+    20250813100000_campaign_rls_and_limits.sql         already applied
+    20251121160000_valuation_schema.sql                already applied
+    20260508140000_audit_scale_and_storage.sql         applied
+  Finished supabase db push.
+
+2026-05-18T19:31:02.774Z  Trigger deploy
+  POST deploy hook
+  body: {"image":"ghcr.io/ajay6601/realestate-dreamstream:v1.0.0"}
+  HTTP 202
+
+2026-05-18T19:31:08.220Z  Smoke test  PRODUCTION_HEALTH_URL
+  attempt 1  connection refused
+  attempt 2  connection refused
+  attempt 3  HTTP 200  {"status":"ok"}
+  /health returned in 21s. Container start includes model load from the promoted registry.
+  Bootstrap training did not run (registry was not empty).
+
+2026-05-18T19:31:36.014Z  Post-deploy checks (read-only)
+  GET /model
+    version v20260518T192640-35a26d5c
+    r2 0.941  mape 0.062  within_10pct 0.812
+  valuation.properties RLS forced: confirmed on pg_class.relforcerowsecurity
+  public.email_logs indexes present: email_logs_sent_idx, email_logs_replied_idx
+  storage bucket proposals: public, mime application/pdf, 25 MB limit
+
+2026-05-18T19:31:48.440Z  Job complete
+
+================================================================================
+Run summary
+================================================================================
+lint                     success    48s
+test-sqlite (3.10)       success    1m 12s     39 passed, 12 skipped
+test-sqlite (3.12)       success    1m 06s     39 passed, 12 skipped
+test-postgres            success    3m 41s     51 passed
+model-gate               success    4m 18s     8/8 gates, 8000 rows, promoted
+build-image              success    2m 55s     ghcr ...:v1.0.0
+deploy                   success    1m 24s     health ok, migrations current
+
+Total 14m 24s
+Conclusion: success
+
+Not in this run, by design
+  Weekly retrain is .github/workflows/model-retrain.yml (Mondays 06:00 UTC).
+  It uses the same gates. A failed gate does not upload a new champion.
+  mark-sent on the API records status only. It does not deliver mail.
+  The promoted model was trained on synthetic rows. It is not a market appraisal.
