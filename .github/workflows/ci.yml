@@ -2,9 +2,10 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, ci-workflows]
     tags: ["v*"]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,33 +16,67 @@ permissions:
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
+  # Public build-time values so Next can prerender without a linked Supabase project.
+  NEXT_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.dGVzdA
+  NEXT_PUBLIC_SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.dGVzdA
+  NEXT_PUBLIC_SUPABASE_BUCKET_NAME: proposals
+  SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.dGVzdA
 
 jobs:
-  lint:
+  web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: realestate-ai
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements-dev.txt }
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: realestate-ai/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
 
   test-sqlite:
-    # unit + ML + e2e API workflows on the fast in-memory backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: realestate-ai
     strategy:
       matrix:
         python: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "${{ matrix.python }}", cache: pip, cache-dependency-path: requirements-dev.txt }
+        with:
+          python-version: "${{ matrix.python }}"
+          cache: pip
+          cache-dependency-path: realestate-ai/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - run: pytest
 
   test-postgres:
-    # the same e2e suite on real Postgres, plus RLS + audit-trigger tests (tests/db)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: realestate-ai
     services:
       postgres:
         image: postgres:16-alpine
@@ -58,30 +93,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements-dev.txt }
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: realestate-ai/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      # tests/conftest.py applies sql/*.sql (idempotent) and creates the app_user login
       - run: pytest -ra
 
   model-gate:
-    # Retrain + validate. Exit code 1 (a failed gate) blocks the pipeline; the promoted
-    # registry is shipped to the image build as an artifact.
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: realestate-ai
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements-dev.txt }
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: realestate-ai/requirements.txt
       - run: pip install -r requirements.txt
       - run: python -m ml.pipeline --registry artifacts/price_model run --rows 8000 | tee model-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: price-model
           path: |
-            artifacts/price_model
-            model-report.json
+            realestate-ai/artifacts/price_model
+            realestate-ai/model-report.json
 
   build-image:
-    needs: [lint, test-sqlite, test-postgres, model-gate]
+    needs: [web, lint, test-sqlite, test-postgres, model-gate]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -89,7 +130,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with: { name: price-model, path: . }
+        with:
+          name: price-model
+          path: realestate-ai
       - uses: docker/setup-buildx-action@v3
       - id: meta
         uses: docker/metadata-action@v5
@@ -107,7 +150,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: .
+          context: realestate-ai
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -115,7 +158,6 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    # Only from main/tags, gated by the "production" environment (add required reviewers in repo settings).
     if: github.event_name == 'push'
     needs: build-image
     runs-on: ubuntu-latest

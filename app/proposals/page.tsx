@@ -499,8 +499,7 @@ export default function ProposalsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete PDF</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete "{pdf.name}"? This
-                          action cannot be undone.
+                          {`Are you sure you want to delete "${pdf.name}"? This action cannot be undone.`}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -876,9 +875,7 @@ export default function ProposalsPage() {
                                             Delete PDF
                                           </AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            Are you sure you want to delete "
-                                            {pdf.name}"? This action cannot be
-                                            undone.
+                                            {`Are you sure you want to delete "${pdf.name}"? This action cannot be undone.`}
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>

@@ -1083,8 +1083,7 @@ export default function EmailTemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Email Template</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the template "
-              {templateToDelete?.template_name}"? This action cannot be undone.
+              {`Are you sure you want to delete the template "${templateToDelete?.template_name}"? This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:gap-2 mt-4">
@@ -1116,7 +1115,7 @@ export default function EmailTemplatesPage() {
           <DialogHeader>
             <DialogTitle>Email Template Preview</DialogTitle>
             <DialogDescription>
-              Preview of "{previewTemplate?.template_name}"
+              {`Preview of "${previewTemplate?.template_name}"`}
             </DialogDescription>
           </DialogHeader>
           {previewTemplate && (

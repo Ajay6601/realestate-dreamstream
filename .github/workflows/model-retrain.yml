@@ -2,14 +2,14 @@ name: Retrain price model
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # weekly, Monday 06:00 UTC
+    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       rows:
         description: "Synthetic rows (ignored when a data file is given)"
         default: "8000"
       data_path:
-        description: "Optional CSV in the repo with feature columns + sale_price"
+        description: "Optional CSV in realestate-ai with feature columns + sale_price"
         default: ""
 
 permissions:
@@ -18,14 +18,18 @@ permissions:
 jobs:
   retrain:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: realestate-ai
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.12", cache: pip, cache-dependency-path: requirements.txt }
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: realestate-ai/requirements.txt
       - run: pip install -r requirements.txt
       - name: Train, validate, promote
-        # A candidate is promoted only if every gate passes (accuracy, baseline, calibration,
-        # sanity, no regression vs the champion). A failed gate fails this run - nothing ships.
         run: |
           ARGS="--rows ${{ inputs.rows || '8000' }}"
           [ -n "${{ inputs.data_path }}" ] && ARGS="--data ${{ inputs.data_path }}"
@@ -34,6 +38,6 @@ jobs:
         with:
           name: price-model-${{ github.run_id }}
           path: |
-            artifacts/price_model
-            model-report.json
+            realestate-ai/artifacts/price_model
+            realestate-ai/model-report.json
           retention-days: 30

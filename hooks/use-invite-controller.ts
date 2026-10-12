@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
   InviteController,
@@ -24,7 +23,6 @@ export function useInviteController() {
     isLoading: authLoading,
   } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
 
   // Create controller instance only once
   const controller = useMemo(() => new InviteController(), []);
@@ -32,7 +30,29 @@ export function useInviteController() {
   // Check authorization using the auth context
   const checkAuthorization = useCallback(() => {
     if (!isAuthInitialized) return; // Wait for auth to initialize
-  }, [user, isRootUser, isAuthInitialized, router, toast]);
+  }, [isAuthInitialized]);
+
+  // Refresh data helper
+  const refreshData = useCallback(async () => {
+    if (!user || !isRootUser) return;
+
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    const { invites, error } = await controller.loadInvites();
+    setState((prev) => ({
+      ...prev,
+      invites: invites || [],
+      error,
+      isLoading: false,
+    }));
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [user, isRootUser, controller, toast]);
 
   // Send invitation
   const inviteUser = useCallback(
@@ -79,30 +99,8 @@ export function useInviteController() {
         return false;
       }
     },
-    [user, isRootUser, controller, toast]
+    [controller, toast, refreshData]
   );
-
-  // Refresh data helper
-  const refreshData = useCallback(async () => {
-    if (!user || !isRootUser) return;
-
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    const { invites, error } = await controller.loadInvites();
-    setState((prev) => ({
-      ...prev,
-      invites: invites || [],
-      error,
-      isLoading: false,
-    }));
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error,
-        variant: "destructive",
-      });
-    }
-  }, [user, isRootUser, controller, toast]);
 
   // Delete user account
   const deleteUser = useCallback(
@@ -127,7 +125,7 @@ export function useInviteController() {
         return false;
       }
     },
-    [user, isRootUser, controller, toast]
+    [controller, toast, refreshData]
   );
 
   // Get invite statistics - use useMemo for performance

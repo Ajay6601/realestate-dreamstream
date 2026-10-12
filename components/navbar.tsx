@@ -609,7 +609,7 @@ export function Navbar({ children }: NavbarProps) {
                         <DialogHeader>
                           <DialogTitle>Change Password</DialogTitle>
                           <DialogDescription>
-                            Enter your new password below. Make sure it's at
+                            Enter your new password below. Make sure it is at
                             least 6 characters long.
                           </DialogDescription>
                         </DialogHeader>
